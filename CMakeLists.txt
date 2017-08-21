@@ -25,5 +25,5 @@ link_libraries(m)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m64 -DIL_STD")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -lm -lpthread")
 
-set(SOURCE_FILES main.cpp flight.h data_io.h)
+set(SOURCE_FILES main.cpp flight.h data_io.h reschedule.h)
 add_executable(XH_2nd ${SOURCE_FILES})

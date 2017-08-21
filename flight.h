@@ -138,31 +138,32 @@ struct BanRule {
     }
 
     bool operator<(const BanRule &that) const {
-        int a = 10000 * (10000 * From + To) + PlaneID;
-        int b = 10000 * (10000 * that.From + that.To) + that.PlaneID;
+        int a = 1000 * (1000 * From + To) + PlaneID;
+        int b = 1000 * (1000 * that.From + that.To) + that.PlaneID;
         return a < b;
     }
 };
 
-struct BanRuleList {
-    set<BanRule> RuleList;
+struct BanRuleSet {
+    set<BanRule> RuleSet;
 
     void display() const {
-        for (auto &rule:RuleList) {
+        for (auto &rule:RuleSet) {
             rule.display();
         }
     }
 };
 
-struct TimeWindow {
+struct TyphoonTimeWindow {
     time_t s = 0;
     time_t t = 0;
+    int tol = 0;
 };
 
 struct Typhoon {
-    map<int, TimeWindow> DepartureTimeWindow;
-    map<int, TimeWindow> ArrivalTimeWindow;
-    map<int, TimeWindow> StayTimeWindow;
+    map<int, TyphoonTimeWindow> DepartureTimeWindow;
+    map<int, TyphoonTimeWindow> ArrivalTimeWindow;
+    map<int, TyphoonTimeWindow> StayTimeWindow;
 
     bool check_departure_time(const int airport_id, time_t &t_dep) const {
         if (DepartureTimeWindow.find(airport_id) ==
@@ -234,7 +235,8 @@ struct Typhoon {
             ss = *localtime(&x.second.s);
             tt = *localtime(&x.second.t);
             cout << put_time(&ss, "%F %T") << ",";
-            cout << put_time(&tt, "%F %T") << endl;
+            cout << put_time(&tt, "%F %T") << ",";
+            cout << x.second.tol << endl;
         }
     }
 };
@@ -266,77 +268,6 @@ struct TravelTimeTable {
 
 };
 
-struct ClosedTime {
-    int Airport;
-    tm StartTime{0};
-    tm EndTime{0};
-    tm StartDate{0};
-    tm EndDate{0};
-
-    void display() {
-        cout << Airport << ",";
-        cout << put_time(&StartTime, "%T") << ",";
-        cout << put_time(&EndTime, "%T") << ",";
-        cout << put_time(&StartDate, "%F") << ",";
-        cout << put_time(&EndDate, "%F") << endl;
-    }
-};
-
-struct ClosedTimeTable {
-    vector<ClosedTime> Table;
-
-    bool is_closed(int airport_id, time_t &t) const {
-        for (auto x:Table) {
-            if (x.Airport != airport_id) {
-                continue;
-            }
-            tm tt = {};
-            tt = *localtime(&t);
-            if ((x.StartDate.tm_yday <= tt.tm_yday) &&
-                (tt.tm_yday <= x.EndDate.tm_yday)) {
-                int a, b, c;
-                a = x.StartTime.tm_hour * 60 + x.StartTime.tm_min;
-                b = x.EndTime.tm_hour * 60 + x.EndTime.tm_min;
-                c = tt.tm_hour * 60 + tt.tm_min;
-                if ((a < c) && (c < b)) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    bool push_back(int airport_id, time_t &t) const {
-        for (auto x:Table) {
-            if (x.Airport != airport_id) {
-                continue;
-            }
-            tm tt = {};
-            tt = *localtime(&t);
-            if ((x.StartDate.tm_yday <= tt.tm_yday) &&
-                (tt.tm_yday <= x.EndDate.tm_yday)) {
-                int a, b, c;
-                a = x.StartTime.tm_hour * 60 + x.StartTime.tm_min;
-                b = x.EndTime.tm_hour * 60 + x.EndTime.tm_min;
-                c = tt.tm_hour * 60 + tt.tm_min;
-                if ((a < c) && (c < b)) {
-                    tt.tm_hour = x.EndTime.tm_hour;
-                    tt.tm_min = x.EndTime.tm_min;
-                    t = mktime(&tt);
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    void display() {
-        for (auto &x:Table) {
-            x.display();
-        }
-    }
-};
-
 struct Transfer {
     int InFlightID = -1;
     int OutFlightID = -1;
@@ -351,10 +282,35 @@ struct Transfer {
     }
 };
 
-struct TransferTimeTable{
+struct TransferTable {
+    list <Transfer> Table;
 
+    void display() {
+        for (auto &x:Table) {
+            x.display();
+        }
+    }
 };
 
+struct Airport {
+    int airport_id = -1;
+    bool is_domestic = false;
+
+    void display() {
+        cout << airport_id << ",";
+        cout << is_domestic << endl;
+    }
+};
+
+struct AirportList {
+    vector<Airport> airport_list;
+
+    void display() {
+        for (auto &x:airport_list) {
+            x.display();
+        }
+    }
+};
 
 
 #endif //XH_2ND_FLIGHT_H

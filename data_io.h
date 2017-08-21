@@ -23,7 +23,6 @@ bool read_flight(const string &file_name, FlightList &flight_table) {
     if (infile) {
         string str, s;
         std::istringstream ss;
-        getline(infile, str);
         while (getline(infile, str)) {
             Flight flight;
 //            航班ID
@@ -35,9 +34,6 @@ bool read_flight(const string &file_name, FlightList &flight_table) {
             ind = str.find(',');
             s = str.substr(0, ind);
             str = str.substr(ind + 1);
-            ss.str(s);
-//            ss >> std::get_time(&flight.Date, "%Y-%m-%d %H:%M:%S");
-            ss.clear();
 //            国际 / 国内
             ind = str.find(',');
             s = str.substr(0, ind);
@@ -62,8 +58,8 @@ bool read_flight(const string &file_name, FlightList &flight_table) {
             ind = str.find(',');
             s = str.substr(0, ind);
             str = str.substr(ind + 1);
-            ss.str(s);
             tm t_dep = {};
+            ss.str(s);
             ss >> std::get_time(&t_dep, "%Y-%m-%d %H:%M:%S");
             flight.DepartureTime = mktime(&t_dep);
             ss.clear();
@@ -73,8 +69,8 @@ bool read_flight(const string &file_name, FlightList &flight_table) {
             str = str.substr(ind + 1);
             ss.str(s);
             tm t_arr = {};
-            ss >> std::get_time(&t_dep, "%Y-%m-%d %H:%M:%S");
-            flight.ArrivalTime = mktime(&t_dep);
+            ss >> std::get_time(&t_arr, "%Y-%m-%d %H:%M:%S");
+            flight.ArrivalTime = mktime(&t_arr);
             ss.clear();
 //            飞机ID
             ind = str.find(',');
@@ -116,14 +112,13 @@ bool read_flight(const string &file_name, FlightList &flight_table) {
 
 }
 
-bool read_ban_rule(const string &file_name, BanRuleList &rule_list) {
+bool read_ban_rule(const string &file_name, BanRuleSet &rule_list) {
     //  打开文件
     ifstream infile;
     infile.open(file_name);
     unsigned long ind;
     if (infile) {
         string str, s;
-        getline(infile, str);
         while (getline(infile, str)) {
             BanRule rule;
 //            起飞机场
@@ -142,7 +137,7 @@ bool read_ban_rule(const string &file_name, BanRuleList &rule_list) {
             str = str.substr(ind + 1);
             rule.PlaneID = stoi(s);
 
-            rule_list.RuleList.insert(rule);
+            rule_list.RuleSet.insert(rule);
         }
         return true;
     }
@@ -159,9 +154,8 @@ bool read_typhoon(const string &file_name, Typhoon &typhoon) {
     if (infile) {
         string str, s;
         std::istringstream ss;
-        getline(infile, str);
         while (getline(infile, str)) {
-            TimeWindow time_window;
+            TyphoonTimeWindow time_window;
             string influence_type;
             int airport_id;
 //            开始时间
@@ -199,6 +193,7 @@ bool read_typhoon(const string &file_name, Typhoon &typhoon) {
                 typhoon.ArrivalTimeWindow[airport_id] = time_window;
             }
             if (influence_type == "停机") {
+                time_window.tol = stoi(str);
                 typhoon.StayTimeWindow[airport_id] = time_window;
             }
         }
@@ -217,7 +212,6 @@ bool read_travel_time(const string &file_name, TravelTimeTable &travel_time_tabl
     if (infile) {
         string str, s;
         std::istringstream ss;
-        getline(infile, str);
         while (getline(infile, str)) {
             FlightRoute route;
 //            飞机机型
@@ -248,7 +242,7 @@ bool read_travel_time(const string &file_name, TravelTimeTable &travel_time_tabl
 
 }
 
-bool read_closed_time(const string &file_name, ClosedTimeTable &closed_time_table) {
+bool read_transfer_info(const string &file_name, TransferTable &transfer_table) {
     //  打开文件
     ifstream infile;
     infile.open(file_name);
@@ -256,50 +250,64 @@ bool read_closed_time(const string &file_name, ClosedTimeTable &closed_time_tabl
     if (infile) {
         string str, s;
         std::istringstream ss;
-        getline(infile, str);
         while (getline(infile, str)) {
-            ClosedTime closed_time;
+            Transfer transfer;
             tm t{0};
             time_t tt;
-//            机场
+//          进港航班ID
             ind = str.find(',');
             s = str.substr(0, ind);
             str = str.substr(ind + 1);
-            closed_time.Airport = stoi(s);
-//            关闭时间
+            transfer.InFlightID = stoi(s);
+//          出港航班ID
             ind = str.find(',');
             s = str.substr(0, ind);
             str = str.substr(ind + 1);
-            ss.str(s);
-            ss >> std::get_time(&closed_time.StartTime, "%H:%M:%S");
-            ss.clear();
-//            开发时间
+            transfer.OutFlightID = stoi(s);
+//          最短转机时限（分钟）
             ind = str.find(',');
             s = str.substr(0, ind);
             str = str.substr(ind + 1);
-            ss.str(s);
-            ss >> std::get_time(&closed_time.EndTime, "%H:%M:%S");
-            ss.clear();
-//            生效日期
+            transfer.TransferTime = stoi(s);
+//          中转旅客人数
             ind = str.find(',');
             s = str.substr(0, ind);
             str = str.substr(ind + 1);
-            ss.str(s);
-            ss >> std::get_time(&t, "%Y-%m-%d");
-            tt = mktime(&t);
-            closed_time.StartDate = *localtime(&tt);
-            ss.clear();
-//            失效日期
-            ind = str.find(',');
-            s = str.substr(0, ind);
-            str = str.substr(ind + 1);
-            ss.str(s);
-            ss >> std::get_time(&t, "%Y-%m-%d");
-            tt = mktime(&t);
-            closed_time.EndDate = *localtime(&tt);
-            ss.clear();
+            transfer.PassengerNumber = stoi(s);
 
-            closed_time_table.Table.push_back(closed_time);
+            transfer_table.Table.push_back(transfer);
+        }
+        return true;
+    }
+
+    return false;
+}
+
+bool read_airport_info(const string &file_name, AirportList &airport_list) {
+    //  打开文件
+    ifstream infile;
+    infile.open(file_name);
+    unsigned long ind;
+    if (infile) {
+        string str, s;
+        std::istringstream ss;
+        while (getline(infile, str)) {
+            Airport airport;
+            tm t{0};
+            time_t tt;
+//          进港航班ID
+            ind = str.find(',');
+            s = str.substr(0, ind);
+            str = str.substr(ind + 1);
+            airport.airport_id = stoi(s);
+//          出港航班ID
+            ind = str.find(',');
+            s = str.substr(0, ind);
+            str = str.substr(ind + 1);
+            airport.is_domestic = stoi(s);
+
+
+            airport_list.airport_list.emplace_back(airport);
         }
         return true;
     }
